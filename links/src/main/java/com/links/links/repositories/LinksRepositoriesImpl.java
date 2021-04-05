@@ -2,6 +2,7 @@ package com.links.links.repositories;
 
 import com.links.links.dto.LinkDTO;
 import com.links.links.dto.ResponseLinkDTO;
+import com.links.links.exceptions.LinkNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -19,8 +20,10 @@ public class LinksRepositoriesImpl implements LinksRepository {
         return count.getAndAdd(1);
     }
 
-    public LinkDTO findById(int id) {
+    public LinkDTO findById(int id) throws LinkNotFoundException {
         LinkDTO link = linksDB.get(id);
+        if (link == null)
+                throw new LinkNotFoundException();
         return link;
     }
 

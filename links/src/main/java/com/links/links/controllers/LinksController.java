@@ -1,7 +1,9 @@
 package com.links.links.controllers;
 
+import com.links.links.dto.ErrorDTO;
 import com.links.links.dto.LinkDTO;
 import com.links.links.dto.ResponseLinkDTO;
+import com.links.links.exceptions.LinkNotFoundException;
 import com.links.links.services.LinkServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -25,22 +27,19 @@ public class LinksController {
     };
 
     @GetMapping("/links")
-    public ResponseEntity redirect(@PathParam("linkId") int linkId, @PathParam("pass") String pass) {
+    public ResponseEntity redirect(@PathParam("linkId") int linkId, @PathParam("pass") String pass) throws LinkNotFoundException {
         LinkDTO link = linkServices.findLink(linkId);
-        if(link != null) {
-            HttpHeaders responseHeaders = new HttpHeaders();
-            responseHeaders.set("Location",
-                    link.getUrl());
-            if(link.getPass().equals(pass)) {
-                return ResponseEntity.status(302).headers(responseHeaders).body(null);
-            }
-            return new ResponseEntity(null, HttpStatus.UNAUTHORIZED);
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.set("Location",
+                link.getUrl());
+        if(link.getPass().equals(pass)) {
+            return ResponseEntity.status(302).headers(responseHeaders).body(null);
         }
-        return new ResponseEntity(null, HttpStatus.NOT_FOUND);
+        return new ResponseEntity(null, HttpStatus.UNAUTHORIZED);
     }
 
     @GetMapping("/metrics/{linkId}")
-    public ResponseEntity statisticsLink(@PathVariable int linkId) {
+    public ResponseEntity statisticsLink(@PathVariable int linkId) throws LinkNotFoundException {
         LinkDTO link = linkServices.getLinkInfo(linkId);
         return new ResponseEntity(link, HttpStatus.OK);
     }
@@ -54,6 +53,13 @@ public class LinksController {
         return new ResponseEntity(null, HttpStatus.NOT_FOUND);
 
     };
+
+    @ExceptionHandler(LinkNotFoundException.class)
+    public ResponseEntity<ErrorDTO> handleException(LinkNotFoundException errorException) {
+        ErrorDTO errorDTO = new ErrorDTO();
+        errorDTO.setMessage("Link" + errorException.getMessage() + "was not found");
+        return new ResponseEntity<>(errorDTO, HttpStatus.NOT_FOUND);
+    }
 
     /* Returns true if url is valid */
     public static boolean isValid(String url)
